@@ -32,16 +32,22 @@ def prep_df(df,keep_meta=False):
     latlong = df['geo'].apply(lambda x: list(decode(x)))
     
     lat = latlong.apply(lambda x: x[0])
-    long = latlong.apply(lambda x: x[1])
+    lon = latlong.apply(lambda x: x[1])
+    
+    
+    demand_delta = [0]+[df.iloc[i].demand-df.iloc[i-1].demand for i in range(1,len(df.demand))]
+    
     
     df.insert(0,'lat',lat)
-    df.insert(1,'long',long)
+    df.insert(1,'long',lon)
     df.insert(len(df.columns)-1,'delta',time_delta)
+    df.insert(len(df.columns)-1,'demand_delta',demand_delta)
     
     if not keep_meta:
         df = df.drop(['geo','timestamp'],axis=1)
     
-    return df    
+
+    return df      
 
 
 

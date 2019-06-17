@@ -13,19 +13,19 @@ class DataTransform:
     
 
     def get_eval_data(self,df):
-        
+
         out_df= None
         for name,group in df.groupby('geohash6'):
             
             preped = prep_df(group)
-
+            print(f'transforming {name}')
         
             if len(preped) < (self.backsteps+1) and len(preped) > 4:
                 npad = self.backsteps - len(preped) + self.forwardsteps +1
                 preped = pad_zeros(preped,npad)
         
         
-            x_,y_ = convert_data_uni(preped.values,backsteps=self.backsteps,forwardsteps=self.forwardsteps,prev_y=False,norepeat_geo=True)
+            x_,y_ = convert_data_uni(preped.values,backsteps=self.backsteps,forwardsteps=self.forwardsteps,prev_y=False,norepeat_geo=False)
             
             if x_.shape[0] > 0: 
                 group_df = pd.DataFrame(data=x_,columns=[f'x_{i}' for i in range(x_.shape[1])])
