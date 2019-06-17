@@ -3,32 +3,56 @@ from data_transform import DataTransform
 from sklearn.metrics import mean_squared_error, mean_squared_log_error
 import numpy as np
 import pandas as pd
+from keras.models import load_model
+from keras import backend as K
 
-MODEL_PATHS={'RF':['models/rf.pkl','models/rf_scaler.pkl']}
+def root_mean_squared_error(y_true,y_pred):
+  return K.sqrt(K.mean(K.square(y_pred - y_true), axis=-1))
+
+MODEL_PATHS={'LSTM':['models/LSTM-1.hdf5','models/lstm_scaler.pkl']}
 
 class Model:
 
-    def __init__(self,backsteps=10,model_type='RF'):
+    def __init__(self,backsteps=24,model_type='LSTM'):
         self.backsteps=backsteps
         
         self.model_type = model_type
-        self.clf =  load(MODEL_PATHS[self.model_type][0])
+        if model_type == 'LSTM':
+            self.clf = load_model(MODEL_PATHS[self.model_type][0])
+            print(model.summary())
+        else:
+            self.clf =  load(MODEL_PATHS[self.model_type][0])
+        
         self.scaler = load(MODEL_PATHS[self.model_type][1])
-        self.data_transformer = DataTransform(self.model_type,self.backsteps,1)
+        self.val_fsteps = 5
+        self.data_transformer = DataTransform(self.model_type,self.backsteps,self.val_fsteps)
     
+    def interpolate(self,ar):
+        t1 = ar[:,0]
+        t3 = ar[:,1]
+        t5 = ar[:,2]
+
+        t2 = (t3 + t1) /2
+        t4 = (t3+t5) / 2
+
+        res = np.hstack([t1,t2,t3,t4,t5])
+
+        return res
+
     def predict(self,df):
         df = self.data_transformer.get_eval_data(df)
 
         predictions = pd.DataFrame(columns=['group','demand'])
         
         for name,group in df.groupby('group'):
-            x = group.values
+            x = group[group.columns[:]]
             x = self.scaler.transform(x)
             y_hat = self.clf.predict(x)
+            y_hat = self.interpolate(y_hat)
 
             predictions.append({'group':[name for i in range(y_hat.shape[0])],'prediction':y_hat})
 
-
+        predictions.to_csv('results/predictions.csv')
         print(predictions)
 
     def get_baseline_score(self,df):

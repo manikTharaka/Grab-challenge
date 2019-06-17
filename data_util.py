@@ -90,7 +90,7 @@ def convert_data_uni(input_data,backsteps=10,forwardsteps=1,prev_y=False,norepea
     return np.array(X),np.array(Y)    
 
 
-def stack_by_groups(groups,backsteps,forwardsteps,norepeat_geo,prev_y=False):
+def stack_by_groups(groups,backsteps,forwardsteps,norepeat_geo,frequency=None,prev_y=False):
     X=list()
     Y=list()
 
@@ -100,6 +100,10 @@ def stack_by_groups(groups,backsteps,forwardsteps,norepeat_geo,prev_y=False):
 
         preped = prep_df(group)
         
+        #change frequency if given
+        if frequency is not None:
+            preped = preped.resample(frequency).mean()
+            preped = preped.fillna(method='ffill')
 
         if len(preped) < (backsteps+1) and len(preped) > 4:
             npad = backsteps - len(preped) + forwardsteps +1
